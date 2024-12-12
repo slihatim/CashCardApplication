@@ -12,7 +12,7 @@ import java.util.Optional;
 class CashCardController {
     private final CashCardRepository cashCardRepository;
 
-    private CashCardController(CashCardRepository cashCardRepository){
+    private CashCardController(CashCardRepository cashCardRepository) {
         this.cashCardRepository = cashCardRepository;
     }
 
@@ -29,15 +29,17 @@ class CashCardController {
     // UriComponentsBuilder is injected automatically by Spring's IoC Container.
     @PostMapping
     private ResponseEntity<Void> createCashCard(@RequestBody CashCard cashCard, UriComponentsBuilder ucb) {
-        CashCard savedCashCard =  cashCardRepository.save(cashCard);
+        CashCard savedCashCard = cashCardRepository.save(cashCard);
 
-        URI locationOfNewCashCard = ucb.path("cashcards/{id}")
-                .buildAndExpand(savedCashCard.id())
-                .toUri();
+        URI locationOfNewCashCard = ucb.path("cashcards/{id}").buildAndExpand(savedCashCard.id()).toUri();
 
         return ResponseEntity
                 //Alternative .created("/cashcards" + savedCashCard.id().toString())
-                .created(locationOfNewCashCard)
-                .build();
+                .created(locationOfNewCashCard).build();
+    }
+
+    @GetMapping
+    private ResponseEntity<Iterable<CashCard>> findAllCashCards() {
+        return ResponseEntity.ok(cashCardRepository.findAll());
     }
 }
