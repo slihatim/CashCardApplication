@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.Optional;
 
 @RestController
@@ -21,8 +22,8 @@ class CashCardController {
     }
 
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId) {
-        Optional<CashCard> cashCardOptional = cashCardRepository.findById(requestedId);
+    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+        Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository.findByIdAndOwner(requestedId, principal.getName()));
         if (cashCardOptional.isPresent()) {
             return ResponseEntity.ok(cashCardOptional.get());
         } else {
@@ -32,8 +33,9 @@ class CashCardController {
 
     // UriComponentsBuilder is injected automatically by Spring's IoC Container.
     @PostMapping
-    private ResponseEntity<Void> createCashCard(@RequestBody CashCard cashCard, UriComponentsBuilder ucb) {
-        CashCard savedCashCard = cashCardRepository.save(cashCard);
+    private ResponseEntity<Void> createCashCard(@RequestBody CashCard cashCard, UriComponentsBuilder ucb, Principal principal) {
+        CashCard cashCardToSave = new CashCard(null, cashCard.amount(), principal.getName());
+        CashCard savedCashCard = cashCardRepository.save(cashCardToSave);
 
         URI locationOfNewCashCard = ucb.path("cashcards/{id}").buildAndExpand(savedCashCard.id()).toUri();
 
@@ -43,8 +45,9 @@ class CashCardController {
     }
 
     @GetMapping
-    private ResponseEntity<Iterable<CashCard>> findAll(Pageable pageable){
-        Page<CashCard> page = cashCardRepository.findAll(
+    private ResponseEntity<Iterable<CashCard>> findAll(Pageable pageable, Principal principal){
+        Page<CashCard> page = cashCardRepository.findByOwner(
+                principal.getName(),
                 PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
